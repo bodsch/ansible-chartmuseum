@@ -1,0 +1,27 @@
+---
+
+- name: daemon-reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+    force: true
+  notify: restart chartmuseum
+  when:
+    - ansible_service_mgr == 'systemd'
+
+- name: restart chartmuseum
+  become: true
+  ansible.builtin.service:
+    name: chartmuseum
+    state: restarted
+  when:
+    - not running_in_check_mode
+
+- name: reload chartmuseum
+  become: true
+  ansible.builtin.service:
+    name: chartmuseum
+    state: reloaded
+  when:
+    - not running_in_check_mode
+
+...

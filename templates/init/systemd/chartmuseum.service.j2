@@ -1,0 +1,39 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description             = Chartmuseum, an open-source Helm Chart Repository server
+
+{% if chartmuseum_systemd.unit.after is defined and
+      chartmuseum_systemd.unit.after | count > 0 %}
+After                   = {{ chartmuseum_systemd.unit.after | join(' ') }}
+{% endif %}
+{% if chartmuseum_systemd.unit.wants is defined and
+      chartmuseum_systemd.unit.wants | count > 0 %}
+Wants                   = {{ chartmuseum_systemd.unit.wants | join(' ') }}
+{% endif %}
+{% if chartmuseum_systemd.unit.requires is defined and
+      chartmuseum_systemd.unit.requires | count > 0 %}
+Requires                = network.target {{ chartmuseum_systemd.unit.requires | join(' ') }}
+{% endif %}
+
+[Service]
+
+RestartSec              = 4s
+Type                    = simple
+User                    = {{ chartmuseum_system_user }}
+Group                   = {{ chartmuseum_system_group }}
+
+# If using Unix socket: tells systemd to create the /run/chartmuseum folder, which will contain the chartmuseum.sock file
+# (manually creating /run/chartmuseum doesn't work, because it would not persist across reboots)
+RuntimeDirectory        = chartmuseum
+
+EnvironmentFile         = -{{ chartmuseum_defaults_directory }}/chartmuseum
+
+ExecStart               = /usr/bin/chartmuseum $OPTIONS
+
+Restart                 = always
+ExecReload              = /bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy                = multi-user.target

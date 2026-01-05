@@ -1,0 +1,28 @@
+---
+
+- name: prepare
+  ansible.builtin.import_tasks: prepare.yml
+  tags:
+    - chartmuseum_install
+    - chartmuseum_configure
+    - chartmuseum_run
+
+- name: download archive
+  ansible.builtin.import_tasks: download.yml
+  become: true
+  tags:
+    - chartmuseum_install
+
+- name: install
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - chartmuseum_install
+
+- name: service
+  ansible.builtin.import_tasks: service.yml
+  become: true
+  tags:
+    - chartmuseum_run
+    - chartmuseum_configure
+
+...

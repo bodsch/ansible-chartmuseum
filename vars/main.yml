@@ -1,0 +1,64 @@
+---
+
+chartmuseum_main_version: "{{ chartmuseum_version[0:3] }}"
+
+chartmuseum_install_path: /usr/local/opt/chartmuseum/{{ chartmuseum_version }}
+
+chartmuseum_delegate_to: localhost
+
+chartmuseum_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/chartmuseum', true) }}/{{ chartmuseum_version }}"
+
+chartmuseum_defaults_service:
+  debug: true
+  listen:
+    host: 127.0.0.1
+    port: 8080
+  chart_url: ""
+  depth: 1
+  log:
+    json: true
+    latency_integer: false
+    health: false
+  storage:
+    backend: local
+    local:
+      rootdir: /var/cache/chartmuseum
+    microsoft: {}
+    openstack: {}
+    etcd: {}
+    amazon: {}
+    google: {}
+    alibaba: {}
+  cache:
+    redis:
+      address: ""
+      password: ""
+      db: ""
+    interval: ""
+  metrics: true
+
+chartmuseum_defaults_release:
+  # https://get.helm.sh/chartmuseum-v0.16.3-linux-amd64.tar.gz
+  download_url: https://get.helm.sh
+  file: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.tar.gz
+  # https://get.helm.sh/chartmuseum-v0.16.3-linux-amd64.tar.gz.sha256sum
+  checksum: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz.sha256sum
+  binary: chartmuseum
+
+# ----------------------------------------------------------------------------------------
+
+chartmuseum_upgrade: false
+
+chartmuseum_defaults_directory: /etc/default
+
+go_arch_map:
+  x86_64: 'amd64'
+  aarch64: 'arm64'
+  armv7l: 'armv7'
+  armv6l: 'armv6'
+
+system_architecture: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
+
+systemd_lib_directory: /lib/systemd/system

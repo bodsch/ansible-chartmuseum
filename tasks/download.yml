@@ -1,0 +1,112 @@
+---
+
+- name: get latest release
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when:
+    - chartmuseum_version == "latest"
+  block:
+    - name: get latest release
+      delegate_to: localhost
+      become: false
+      run_once: true
+      bodsch.scm.github_latest:
+        project: helm
+        repository: chartmuseum
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      register: _latest_release
+
+    - name: re-define chartmuseum_version
+      ansible.builtin.set_fact:
+        chartmuseum_version: "{{ _latest_release.latest_release.split(' ')[1][1:] }}"
+
+- name: define download information
+  ansible.builtin.set_fact:
+    chartmuseum_release: "{{ chartmuseum_defaults_release | combine(chartmuseum_release, recursive=True) }}"
+
+- name: define delegate instance for download handling
+  ansible.builtin.set_fact:
+    chartmuseum_delegate_to: "{{ ansible_host }}"
+    chartmuseum_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/chartmuseum', true) }}/{{ chartmuseum_version }}"
+  when:
+    - chartmuseum_direct_download
+
+- name: create download directory
+  become: false
+  delegate_to: "{{ chartmuseum_delegate_to }}"
+  run_once: "{{ 'false' if chartmuseum_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ chartmuseum_local_tmp_directory }}"
+    state: directory
+    mode: "0750"
+  check_mode: false
+
+- name: detect the downloaded chartmuseum archive
+  become: false
+  delegate_to: "{{ chartmuseum_delegate_to }}"
+  run_once: "{{ 'false' if chartmuseum_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ chartmuseum_local_tmp_directory }}/{{ chartmuseum_release.file }}"
+  register: stat_chartmuseum_archive
+
+- name: download
+  when:
+    - stat_chartmuseum_archive.stat is defined
+    - not stat_chartmuseum_archive.stat.exists | default('false')
+    - not running_in_check_mode
+  block:
+    - name: download chartmuseum binary archive
+      become: false
+      delegate_to: "{{ chartmuseum_delegate_to }}"
+      run_once: "{{ 'false' if chartmuseum_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ chartmuseum_release.download_url }}/{{ chartmuseum_release.file }}"
+        dest: "{{ chartmuseum_local_tmp_directory }}/{{ chartmuseum_release.file }}"
+        checksum: "sha256:{{ chartmuseum_release.download_url }}/{{ chartmuseum_release.checksum }}"
+        mode: "0640"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ chartmuseum_delegate_to }}"
+      run_once: "{{ 'false' if chartmuseum_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ chartmuseum_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+- name: detect extracted binary
+  become: false
+  delegate_to: "{{ chartmuseum_delegate_to }}"
+  run_once: "{{ 'false' if chartmuseum_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ chartmuseum_local_tmp_directory }}/chartmuseum"
+  register: stat_chartmuseum_binary
+
+- name: extract chartmuseum archive
+  become: false
+  delegate_to: "{{ chartmuseum_delegate_to }}"
+  run_once: "{{ 'false' if chartmuseum_direct_download else 'true' }}"
+  ansible.builtin.unarchive:
+    src: "{{ chartmuseum_local_tmp_directory }}/{{ chartmuseum_release.file }}"
+    dest: "{{ chartmuseum_local_tmp_directory }}/"
+    copy: false
+    extra_opts:
+      - --strip-components=1
+  when:
+    - not running_in_check_mode
+    - stat_chartmuseum_binary.stat is defined
+    - not stat_chartmuseum_binary.stat.exists | default('false')
+
+...

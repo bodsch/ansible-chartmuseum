@@ -1,0 +1,171 @@
+---
+
+- name: user and group handling
+  when:
+    - chartmuseum_system_user != "root"
+  block:
+    - name: create chartmuseum group
+      ansible.builtin.group:
+        name: "{{ chartmuseum_system_group }}"
+        state: present
+        system: true
+
+    - name: create chartmuseum user
+      ansible.builtin.user:
+        name: "{{ chartmuseum_system_user }}"
+        groups: "{{ chartmuseum_system_group }}"
+        append: true
+        shell: /usr/sbin/nologin
+        system: true
+        createhome: false
+        home: /nonexistent
+
+- name: create install directory
+  ansible.builtin.file:
+    path: "{{ chartmuseum_install_path }}"
+    state: directory
+    owner: "{{ chartmuseum_system_user }}"
+    group: "{{ chartmuseum_system_group }}"
+    mode: "0755"
+
+- name: detect extracted binary file for chartmuseum on '{{ chartmuseum_delegate_to }}'
+  become: false
+  delegate_to: "{{ chartmuseum_delegate_to }}"
+  run_once: "{{ 'false' if chartmuseum_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ chartmuseum_local_tmp_directory }}/chartmuseum"
+  register: stat_file_binary
+
+- name: fail when extracted binary are missing
+  ansible.builtin.fail:
+    msg: "missing extracted binary on ansible controller"
+  when:
+    - not running_in_check_mode
+    - not stat_file_binary.stat.exists
+
+- name: detect installed chartmuseum binary
+  ansible.builtin.stat:
+    path: "{{ chartmuseum_install_path }}/{{ chartmuseum_release.binary }}"
+  register: stat_chartmuseum_binary
+
+- name: detect activated chartmuseum binary
+  ansible.builtin.stat:
+    path: /usr/bin/{{ chartmuseum_release.binary }}
+  register: stat_chartmuseum_activated
+
+- name: install and activate chartmuseum
+  when:
+    - not running_in_check_mode
+    - stat_file_binary.stat.exists
+    - (stat_chartmuseum_binary.stat is defined and not stat_chartmuseum_binary.stat.exists | default('false')) or
+      not stat_chartmuseum_activated.stat | bodsch.core.linked_version(chartmuseum_install_path, chartmuseum_version)
+  block:
+    - name: propagate files
+      block:
+        - name: propagate chartmuseum binary
+          ansible.builtin.copy:
+            src: "{{ chartmuseum_local_tmp_directory }}/chartmuseum"
+            dest: "{{ chartmuseum_install_path }}/{{ chartmuseum_release.binary }}"
+            mode: "0755"
+            owner: "{{ chartmuseum_system_user }}"
+            group: "{{ chartmuseum_system_group }}"
+            remote_src: "{{ 'true' if chartmuseum_direct_download else 'false' }}"
+
+        - name: make files executable
+          ansible.builtin.file:
+            path: "{{ chartmuseum_install_path }}/{{ chartmuseum_release.binary }}"
+            mode: "0755"
+            owner: "{{ chartmuseum_system_user }}"
+            group: "{{ chartmuseum_system_group }}"
+
+        - name: create link to binary
+          ansible.builtin.file:
+            src: "{{ chartmuseum_install_path }}/{{ chartmuseum_release.binary }}"
+            dest: /usr/bin/{{ chartmuseum_release.binary }}
+            state: link
+            force: true
+            follow: false
+          notify:
+            - restart chartmuseum
+
+      rescue:
+        - name: delete install directory
+          ansible.builtin.file:
+            path: "{{ chartmuseum_install_path }}"
+            state: absent
+
+        - name: exit with fail
+          ansible.builtin.fail:
+            msg: A serious error occurred during the installation of the binary.
+
+- name: create local storage directory
+  when:
+    - chartmuseum_service is defined
+    - chartmuseum_service.storage is defined
+    - chartmuseum_service.storage.backend is defined
+    - chartmuseum_service.storage.backend == "local"
+    - chartmuseum_service.storage.local is defined
+    - chartmuseum_service.storage.local.rootdir is defined
+    - chartmuseum_service.storage.local.rootdir | string | length > 0
+  ansible.builtin.file:
+    path: "{{ chartmuseum_service.storage.local.rootdir }}"
+    state: directory
+    owner: "{{ chartmuseum_system_user }}"
+    group: "{{ chartmuseum_system_group }}"
+    mode: "0755"
+
+- name: systemd
+  when:
+    - ansible_service_mgr | lower == "systemd"
+    - not running_in_check_mode
+  block:
+    - name: create chartmuseum run configuration
+      ansible.builtin.template:
+        src: "default/chartmuseum.j2"
+        dest: "{{ chartmuseum_defaults_directory }}/chartmuseum"
+        force: true
+        owner: root
+        group: "{{ chartmuseum_system_group }}"
+        mode: "0640"
+      notify:
+        - restart chartmuseum
+
+    - name: create systemd service unit
+      ansible.builtin.template:
+        src: "init/systemd/chartmuseum.service.j2"
+        dest: "{{ systemd_lib_directory }}/chartmuseum.service"
+        owner: root
+        group: root
+        mode: "0644"
+      notify:
+        - daemon-reload
+        - restart chartmuseum
+
+- name: openrc
+  when:
+    - ansible_service_mgr | lower == "openrc"
+    - not running_in_check_mode
+  block:
+    - name: create openrc service configuration
+      ansible.builtin.template:
+        src: "init/openrc/conf.d/chartmuseum.j2"
+        dest: "/etc/conf.d/chartmuseum"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: create openrc init configuration
+      ansible.builtin.template:
+        src: "init/openrc/init.d/chartmuseum.j2"
+        dest: "/etc/init.d/chartmuseum"
+        owner: root
+        group: root
+        mode: "0750"
+
+- name: create custom fact file
+  when:
+    - not running_in_check_mode
+  bodsch.core.facts:
+    name: chartmuseum
+    facts:
+      version: "{{ chartmuseum_version }}"

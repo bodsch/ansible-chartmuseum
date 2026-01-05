@@ -1,0 +1,29 @@
+---
+
+chartmuseum_version: '0.16.3'
+
+chartmuseum_system_group: chartmuseum
+chartmuseum_system_user: "{{ chartmuseum_system_group }}"
+chartmuseum_config_dir: /etc/chartmuseum
+
+chartmuseum_direct_download: false
+
+chartmuseum_release:
+  download_url: https://get.helm.sh
+  # https://get.helm.sh/chartmuseum-v0.16.3-linux-amd64.tar.gz
+  # file: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.tar.gz
+
+chartmuseum_systemd:
+  unit:
+    after:
+      - syslog.target
+      - network.target
+    wants: []
+    requires: []
+  service:
+    limits:
+      nofile:
+        soft: ""
+        hard: ""
+
+chartmuseum_service: {}

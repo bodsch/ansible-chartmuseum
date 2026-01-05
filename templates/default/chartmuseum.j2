@@ -1,0 +1,175 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+{% set values = chartmuseum_service | bodsch.core.remove_empty_values %}
+
+OPTIONS="
+  {% if values.debug | default('false') | bool %}
+  --debug \
+  {% endif %}
+  {% if values.log is defined and
+        values.log.json | default('false') | bool %}
+  --log-json \
+  {% endif %}
+  {% if values.log is defined and
+        values.log.latency_integer | default('false') | bool %}
+  --log-latency-integer \
+  {% endif %}
+  {% if values.log is defined and
+        values.log.health | default('false') | bool %}
+  --log-health \
+  {% endif %}
+  {% if values.metrics is defined and
+        values.metrics | default('false') | bool %}
+  --enable-metrics \
+  {% endif %}
+  {% if values.listen.host is defined and
+        values.listen.host | string | length > 0 %}
+  --listen-host {{ values.listen.host }} \
+  {% endif %}
+  {% if values.listen.port is defined and
+        values.listen.port | string | length > 0 %}
+  --port {{ values.listen.port }} \
+  {% endif %}
+  {% if values.chart_url is defined and
+        values.chart_url | string | length > 0 %}
+  --chart-url {{ values.chart_url }} \
+  {% endif %}
+  {% if values.depth is defined and
+        values.depth | string | length > 0 %}
+  --depth {{ values.depth | int }} \
+  {% endif %}
+  {% if values.storage is defined and
+        values.storage.backend in ["local"] %}
+    {% if values.storage.backend == "local" %}
+  --storage local \
+    {% endif %}
+    {% if values.storage.local.rootdir is defined and
+          values.storage.local.rootdir | string | length > 0 %}
+  --storage-local-rootdir {{ values.storage.local.rootdir }} \
+    {% endif %}
+  {% endif %}
+  {% if values.cache is defined and
+        values.cache.redis is defined and
+        values.cache.redis.address is defined and
+        values.cache.redis.address | string | length > 0 %}
+  --cache redis \
+  --cache-redis-addr {{ values.cache.redis.address }} \
+    {% if values.cache.redis.password is defined and
+          values.cache.redis.password | string | length > 0 %}
+  --cache-redis-password {{ values.cache.redis.password }} \
+    {% endif %}
+    {% if values.cache.redis.db is defined and
+          values.cache.redis.db | string | length > 0 %}
+  --cache-redis-db {{ values.cache.redis.db }} \
+    {% endif %}
+    {% if values.cache.interval is defined and
+          values.cache.interval | string | length > 0 %}
+  --cache-interval {{ values.cache.interval }}
+    {% endif %}
+  {% endif %}
+"
+
+{#
+chartmuseum --help
+NAME:
+   ChartMuseum - Helm Chart Repository with support for Amazon S3, Google Cloud Storage, Oracle Cloud Infrastructure Object Storage and Openstack
+
+USAGE:
+   chartmuseum [global options] command [command options] [arguments...]
+
+VERSION:
+   0.16.3 (build fce57c0)
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --config value, -c value                 chartmuseum configuration file [$CONFIG]
+   --storage-microsoft-prefix value         prefix to store charts for --storage-microsoft-prefix [$STORAGE_MICROSOFT_PREFIX]
+   --storage-openstack-region value         region of --storage-openstack-container [$STORAGE_OPENSTACK_REGION]
+   --storage-etcd-prefix value              prefix used in etcd to store the charts in etcd [$STORAGE_ETCD_PREFIX]
+   --bearer-auth                            enable bearer auth [$BEARER_AUTH]
+   --depth-dynamic                          the length of repo variable [$DEPTH_DYNAMIC]
+   --log-health                             log inbound /health requests [$LOG_HEALTH]
+   --enable-metrics                         enable Prometheus metrics [$ENABLE_METRICS]
+   --allow-overwrite                        allow chart versions to be re-uploaded without ?force querystring [$ALLOW_OVERWRITE]
+   --storage-google-prefix value            prefix to store charts for --storage-google-bucket [$STORAGE_GOOGLE_PREFIX]
+   --cors-alloworigin value                 value to set in the Access-Control-Allow-Origin HTTP header [$CORS_ALLOW_ORIGIN]
+   --debug                                  show debug messages [$DEBUG]
+   --log-latency-integer                    log latency as an integer (nanoseconds) instead of a string [$LOG_LATENCY_INTEGER]
+   --basic-auth-pass value                  password for basic http authentication [$BASIC_AUTH_PASS]
+   --storage-oracle-compartmentid value     compartment ocid of --storage-oracle-bucket [$STORAGE_ORACLE_COMPARTMENTID]
+   --storage-alibaba-bucket value           OSS bucket to store charts for Alibaba Cloud storage backend [$STORAGE_ALIBABA_BUCKET]
+   --gen-index                              generate index.yaml, print to stdout and exit [$GEN_INDEX]
+   --disable-statefiles                     disable use of index-cache.yaml [$DISABLE_STATEFILES]
+   --storage-amazon-endpoint value          alternative s3 endpoint [$STORAGE_AMAZON_ENDPOINT]
+   --storage-oracle-region value            region to store charts for --storage-oracle-bucket [$STORAGE_ORACLE_REGION]
+   --disable-force-overwrite                do not allow chart versions to be re-uploaded, even with ?force querystring [$DISABLE_FORCE_OVERWRITE]
+   --storage-local-rootdir value            directory to store charts for local storage backend [$STORAGE_LOCAL_ROOTDIR]
+   --storage-etcd-certfile value            cert provided to etcd [$STORAGE_ETCD_CERTFILE]
+   --port value                             port to listen on (default: 0) [$PORT]
+   --storage-amazon-bucket value            s3 bucket to store charts for amazon storage backend [$STORAGE_AMAZON_BUCKET]
+   --max-storage-objects value              maximum number of objects allowed in storage (per tenant) (default: 0) [$MAX_STORAGE_OBJECTS]
+   --always-regenerate-chart-index          always regenerate the chart index and ignore the chart cache (this will result in decreased performance and an increase in resource consumption) [$ALWAYS_REGENERATE_CHART_INDEX]
+   --write-timeout value                    socket timeout in seconds (default: 0) [$WRITE_TIMEOUT]
+   --tls-ca-cert value                      path to tls ca cert file [$TLS_CA_CERT]
+   --storage-amazon-sse value               server side encryption algorithm [$STORAGE_AMAZON_SSE]
+   --storage-oracle-prefix value            prefix to store charts for --storage-oracle-bucket [$STORAGE_ORACLE_PREFIX]
+   --storage-openstack-prefix value         prefix to store charts for --storage-openstack-container [$STORAGE_OPENSTACK_PREFIX]
+   --storage-baidu-prefix value             prefix to store charts for --storage-baidu-cloud-bucket [$STORAGE_BAIDU_PREFIX]
+   --storage-etcd-endpoint value            ETCD endpoint [$STORAGE_ETCD_ENDPOINT]
+   --storage-etcd-cafile value              ca-file provided to etcd [$STORAGE_ETCD_CAFILE]
+   --cache-redis-password value             Redis requirepass server configuration [$CACHE_REDIS_PASSWORD]
+   --cache-redis-db value                   Redis database to be selected after connect (default: 0) [$CACHE_REDIS_DB]
+   --storage value                          storage backend, can be one of: local, amazon, google, oracle [$STORAGE]
+   --storage-alibaba-endpoint value         OSS endpoint [$STORAGE_ALIBABA_ENDPOINT]
+   --storage-tencent-prefix value           prefix to store charts for --storage-tencent-cloud-bucket [$STORAGE_TENCENT_PREFIX]
+   --chart-post-form-field-name value       form field which will be queried for the chart file content [$CHART_POST_FORM_FIELD_NAME]
+   --auth-cert-path value                   path to authorization server public pem file [$AUTH_CERT_PATH]
+   --cache-interval value                   set the interval of delta updating the cache (default: 0s) [$CACHE_INTERVAL]
+   --storage-openstack-container value      container to store charts for openstack storage backend [$STORAGE_OPENSTACK_CONTAINER]
+   --storage-baidu-bucket value             BOS bucket to store charts for Baidu Cloud storage backend [$STORAGE_BAIDU_BUCKET]
+   --storage-baidu-endpoint value           BOS endpoint [$STORAGE_BAIDU_ENDPOINT]
+   --max-upload-size value                  max size of post body (in bytes) (default: 20971520) [$MAX_UPLOAD_SIZE]
+   --index-limit value                      parallel scan limit for the repo indexer (default: 0) [$INDEX_LIMIT]
+   --tls-key value                          path to tls key file [$TLS_KEY]
+   --storage-amazon-region value            region of --storage-amazon-bucket [$STORAGE_AMAZON_REGION]
+   --storage-oracle-bucket value            ocs bucket to store charts for oracle cloud storage [$STORAGE_ORACLE_BUCKET]
+   --auth-service value                     authorization server service name [$AUTH_SERVICE]
+   --listen-host value                      specifies the host to listen on [$LISTEN_HOST]
+   --per-chart-limit value                  limits the museum server stores the max N versions per chart (default: 0) [$PER_CHART_LIMIT]
+   --context-path value                     base context path [$CONTEXT_PATH]
+   --disable-delete                         disable DELETE route [$DISABLE_DELETE]
+   --json-index                             generates an index in JSON format, improves parsing performance for large index files [$JSON_INDEX]
+   --storage-alibaba-sse value              server side encryption algorithm for Alibaba Cloud storage backend, AES256 or KMS [$STORAGE_ALIBABA_SSE]
+   --prov-post-form-field-name value        form field which will be queried for the provenance file content [$PROV_POST_FORM_FIELD_NAME]
+   --depth value                            levels of nested repos for multitenancy (default: 0) [$DEPTH]
+   --log-json                               output structured logs as json [$LOG_JSON]
+   --disable-metrics                        (deprecated) disable Prometheus metrics [$DISABLE_METRICS]
+   --disable-api                            disable all routes prefixed with /api [$DISABLE_API]
+   --storage-timestamp-tolerance value      timestamp drift tolerated between cached and generated index before invalidation (default: 0s) [$STORAGE_TIMESTAMP_TOLERANCE]
+   --storage-microsoft-container value      container to store charts for microsoft storage backend [$STORAGE_MICROSOFT_CONTAINER]
+   --storage-openstack-cacert value         path to a CA cert bundle for your openstack endpoint [$STORAGE_OPENSTACK_CACERT]
+   --storage-etcd-keyfile value             key provided to etcd [$STORAGE_ETCD_KEYFILE]
+   --storage-amazon-force-path-style value  whether to force path style for amazon storage backend [$STORAGE_AMAZON_FORCE_PATH_STYLE]
+   --storage-openstack-auth value           the OpenStack auth protocol to use. Set "v1" for v1 or "auto" for v2 and v3 [$STORAGE_OPENSTACK_AUTH]
+   --auth-realm value                       authorization server url [$AUTH_REALM]
+   --artifact-hub-repo-id value             the artifact hub repositoryID used to populate a artifacthub-repo.yml file. This can be a single repository ID for depth=0 servers or a key value pair for depth=N servers (i.e org1/repo1=foo). [$ARTIFACT_HUB_REPO_ID]
+   --read-timeout value                     socket timeout in seconds (default: 0) [$READ_TIMEOUT]
+   --basic-auth-user value                  username for basic http authentication [$BASIC_AUTH_USER]
+   --auth-anonymous-get                     allow anonymous GET operations when auth is used [$AUTH_ANONYMOUS_GET]
+   --cache-redis-addr value                 address of Redis service (host:port) [$CACHE_REDIS_ADDR]
+   --storage-tencent-bucket value           COS bucket to store charts for Tencent Cloud storage backend [$STORAGE_TENCENT_BUCKET]
+   --storage-tencent-endpoint value         COS endpoint [$STORAGE_TENCENT_ENDPOINT]
+   --cache value                            cache store, can be one of: redis [$CACHE]
+   --storage-amazon-prefix value            prefix to store charts for --storage-amazon-bucket [$STORAGE_AMAZON_PREFIX]
+   --storage-google-bucket value            gcs bucket to store charts for google storage backend [$STORAGE_GOOGLE_BUCKET]
+   --storage-alibaba-prefix value           prefix to store charts for --storage-alibaba-cloud-bucket [$STORAGE_ALIBABA_PREFIX]
+   --auth-actions-search-path value         JMESPath to find allowed actions in a jwt token [$AUTH_ACTIONS_SEARCH_PATH]
+   --enforce-semver2                        (deprecated) enforce the chart museum server only accepts the valid chart version as Helm does [$ENFORCE_SEMVER2]
+   --web-template-path value                path to the folder, which contains the custom welcome page [$WEB_TEMPLATE_PATH]
+   --chart-url value                        absolute url for .tgzs in index.yaml [$CHART_URL]
+   --tls-cert value                         path to tls certificate chain file [$TLS_CERT]
+   --help, -h                               show help
+   --version, -v                            print the version
+#}

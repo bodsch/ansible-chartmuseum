@@ -1,0 +1,34 @@
+---
+
+chartmuseum_version: "latest"
+
+chartmuseum_service:
+  debug: true
+  listen:
+    host: 0.0.0.0
+    port: 8080
+  chart_url: "http://charts.matrix.lan"
+  depth: 2
+  log:
+    json: false
+    latency_integer: false
+    health: false
+  storage:
+    backend: local
+    local:
+      rootdir: /var/cache/chartmuseum
+    microsoft: {}
+    openstack: {}
+    etcd: {}
+    amazon: {}
+    google: {}
+    alibaba: {}
+  cache:
+    redis:
+      address: ""
+      password: ""
+      db: ""
+    interval: ""
+  metrics: false
+
+...

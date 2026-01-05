@@ -1,0 +1,26 @@
+---
+
+chartmuseum_service:
+  debug: true
+  listen:
+    host: 127.0.0.1
+    port: 8080
+  chart_url: "https://chartmuseum.molecule.lan"
+  depth: 2
+  log:
+    json: false
+    latency_integer: false
+    health: false
+  storage:
+    backend: local
+    local:
+      rootdir: /var/cache/chartmuseum
+  cache:
+    redis:
+      address: "127.0.0.1:6379"
+      password: ""
+      db: "0"
+    interval: "30s"
+  metrics: true
+
+...
