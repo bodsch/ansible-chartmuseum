@@ -119,13 +119,15 @@ def local_facts(host):
     return local facts
     """
     return (
-        host.ansible("setup").get("ansible_facts").get("ansible_local").get("chartmuseum")
+        host.ansible("setup")
+        .get("ansible_facts")
+        .get("ansible_local")
+        .get("chartmuseum")
     )
 
 
 def test_user(host, get_vars):
-    """
-    """
+    """ """
     user = get_vars.get("chartmuseum_system_user", "chartmuseum")
     group = get_vars.get("chartmuseum_system_group", "chartmuseum")
 
@@ -155,6 +157,7 @@ def test_version(host, get_vars):
     # link = host.file(current_link)
     # assert link.is_symlink
     # assert link.linked_to == version_dir
+
 
 def test_open_port(host, get_vars):
     for i in host.socket.get_listening_sockets():
