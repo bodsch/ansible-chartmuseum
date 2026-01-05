@@ -27,13 +27,12 @@ jobs:
         image:
           - archlinux:latest
         python_version:
-          - "3.11"
+          - "3.13"
         ansible-version:
           - '9.5'
           - '10.7'
           - '11.13'
           - '12.3'
-          - '13.1'
         scenario:
           - default
     steps:
