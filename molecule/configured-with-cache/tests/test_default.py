@@ -323,7 +323,7 @@ def test_open_port(host, get_vars):
 
     print(chartmuseum_service)
 
-    listen_address = "0.0.0.0:8080"
+    listen_address = "127.0.0.1:8080"
 
     if isinstance(chartmuseum_service, dict):
         _listen = chartmuseum_service.get("listen")
