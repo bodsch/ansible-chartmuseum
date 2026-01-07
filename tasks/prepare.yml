@@ -36,7 +36,7 @@
     - chartmuseum_requirements | default([]) | count > 0
 
 - name: merge chartmuseum configuration between defaults and custom
-  set_fact:
+  ansible.builtin.set_fact:
     chartmuseum_service: "{{ chartmuseum_defaults_service | combine(chartmuseum_service, recursive=True) }}"
 
 ...
