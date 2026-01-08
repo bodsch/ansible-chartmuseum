@@ -11,7 +11,7 @@ chartmuseum_direct_download: false
 chartmuseum_release:
   download_url: https://get.helm.sh
   # https://get.helm.sh/chartmuseum-v0.16.3-linux-amd64.tar.gz
-  # file: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.tar.gz
+  # file: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz
 
 chartmuseum_systemd:
   unit:

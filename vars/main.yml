@@ -42,7 +42,7 @@ chartmuseum_defaults_service:
 chartmuseum_defaults_release:
   # https://get.helm.sh/chartmuseum-v0.16.3-linux-amd64.tar.gz
   download_url: https://get.helm.sh
-  file: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.tar.gz
+  file: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz
   # https://get.helm.sh/chartmuseum-v0.16.3-linux-amd64.tar.gz.sha256sum
   checksum: chartmuseum-v{{ chartmuseum_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz.sha256sum
   binary: chartmuseum
