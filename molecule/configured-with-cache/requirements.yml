@@ -1,5 +1,8 @@
 ---
 
+collections:
+  - name: bodsch.certs
+
 roles:
   - name: bodsch.nginx
     src: bodsch.nginx
