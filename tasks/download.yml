@@ -21,7 +21,7 @@
 
     - name: re-define chartmuseum_version
       ansible.builtin.set_fact:
-        chartmuseum_version: "{{ _latest_release.latest_release.split(' ')[1][1:] }}"
+        chartmuseum_version: "{{ _latest_release.latest_release }}"
 
 - name: define download information
   when:
