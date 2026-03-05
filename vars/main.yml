@@ -38,6 +38,14 @@ chartmuseum_defaults_service:
       db: ""
     interval: ""
   metrics: true
+  basic_auth:
+    user: ""
+    pass: ""
+    anonymous_get: true
+  tls:
+    cert: ""
+    key: ""
+    ca_cert: ""
 
 chartmuseum_defaults_release:
   # https://get.helm.sh/chartmuseum-v0.16.3-linux-amd64.tar.gz

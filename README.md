@@ -1,5 +1,5 @@
 
-# Ansible Role:  `chartmuseum`
+# Ansible Role:  `bodsch.chartmuseum`
 
 Installs and configure a [chartmuseum](https://github.com/helm/chartmuseum) server on varoius linux systems.
 

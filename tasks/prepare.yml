@@ -29,11 +29,12 @@
     running_in_check_mode: '{{ _check_mode.check_mode }}'
 
 - name: install dependency
+  when:
+    - not running_in_check_mode
+    - chartmuseum_requirements | default([]) | count > 0
   ansible.builtin.package:
     name: "{{ chartmuseum_requirements }}"
     state: present
-  when:
-    - chartmuseum_requirements | default([]) | count > 0
 
 - name: merge chartmuseum configuration between defaults and custom
   ansible.builtin.set_fact:

@@ -67,6 +67,19 @@ OPTIONS="
   --cache-interval {{ values.cache.interval }}
     {% endif %}
   {% endif %}
+  {% if values.basic_auth is defined and
+        values.basic_auth.user is defined and
+        values.basic_auth.pass is defined and
+        values.basic_auth.user | string | length > 0 and
+        values.basic_auth.pass | string | length > 0 %}
+  --basic-auth-user {{ values.basic_auth.user }} \
+  --basic-auth-pass {{ values.basic_auth.pass }} \
+    {% if values.basic_auth.anonymous_get is defined and
+          values.basic_auth.anonymous_get | string | length > 0 and
+          values.basic_auth.anonymous_get %}
+  --auth-anonymous-get \
+    {% endif %}
+  {% endif %}
 "
 
 {#
