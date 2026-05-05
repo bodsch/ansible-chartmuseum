@@ -1,9 +1,9 @@
 ---
 
-chartmuseum_version: '0.16.3'
+chartmuseum_version: '0.16.5'
 
+chartmuseum_system_user: root
 chartmuseum_system_group: chartmuseum
-chartmuseum_system_user: "{{ chartmuseum_system_group }}"
 chartmuseum_config_dir: /etc/chartmuseum
 
 chartmuseum_direct_download: false

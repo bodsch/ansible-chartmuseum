@@ -3,15 +3,20 @@
 - name: user and group handling
   when:
     - not running_in_check_mode
-    - chartmuseum_system_user != "root"
+    - chartmuseum_system_user != "root" or
+      chartmuseum_system_group != "root"
   block:
     - name: create chartmuseum group
+      when:
+        - chartmuseum_system_group != "root"
       ansible.builtin.group:
         name: "{{ chartmuseum_system_group }}"
         state: present
         system: true
 
     - name: create chartmuseum user
+      when:
+        - chartmuseum_system_user != "root"
       ansible.builtin.user:
         name: "{{ chartmuseum_system_user }}"
         groups: "{{ chartmuseum_system_group }}"

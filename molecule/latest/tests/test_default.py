@@ -1,3 +1,4 @@
+# coding: utf-8
 from __future__ import annotations, unicode_literals
 
 import os
@@ -18,7 +19,9 @@ def test_user(host, get_vars):
 
     assert host.group(group).exists
     assert host.user(user).exists
-    assert group in host.user(user).groups
+
+    if user != "root":
+        assert group in host.user(user).groups
 
 
 def test_version(host):
@@ -58,6 +61,10 @@ def test_storage_directory(host, get_vars):
     if storage:
         directory = host.file(storage)
         assert directory.is_directory
+
+        assert directory.user == user
+        assert directory.group == group
+        assert directory.mode == 0o755
 
 
 def test_service(host, get_vars):

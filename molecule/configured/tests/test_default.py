@@ -1,3 +1,4 @@
+# coding: utf-8
 from __future__ import annotations, unicode_literals
 
 import os
@@ -18,7 +19,9 @@ def test_user(host, get_vars):
 
     assert host.group(group).exists
     assert host.user(user).exists
-    assert group in host.user(user).groups
+
+    if user != "root":
+        assert group in host.user(user).groups
 
 
 def test_version(host):
@@ -52,12 +55,18 @@ def test_storage_directory(host, get_vars):
         .get("local", {})
         .get("rootdir", None)
     )
+    user = get_vars.get("chartmuseum_system_user", "chartmuseum")
+    group = get_vars.get("chartmuseum_system_group", "chartmuseum")
 
     print(storage)
 
     if storage:
         directory = host.file(storage)
         assert directory.is_directory
+
+        assert directory.user == user
+        assert directory.group == group
+        assert directory.mode == 0o755
 
 
 def test_service(host, get_vars):
@@ -74,7 +83,7 @@ def test_open_port(host, get_vars):
 
     print(chartmuseum_service)
 
-    listen_address = "0.0.0.0:8080"
+    listen_address = "127.0.0.1:8080"
 
     if isinstance(chartmuseum_service, dict):
         _listen = chartmuseum_service.get("listen")

@@ -11,7 +11,7 @@ chartmuseum_local_tmp_directory: "{{
   default(lookup('env', 'HOME') ~ '/.cache/ansible/chartmuseum', true) }}/{{ chartmuseum_version }}"
 
 chartmuseum_defaults_service:
-  debug: true
+  debug: false
   listen:
     host: 127.0.0.1
     port: 8080
