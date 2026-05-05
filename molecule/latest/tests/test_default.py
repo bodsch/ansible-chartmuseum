@@ -55,6 +55,8 @@ def test_storage_directory(host, get_vars):
         .get("local", {})
         .get("rootdir", None)
     )
+    user = get_vars.get("chartmuseum_system_user", "chartmuseum")
+    group = get_vars.get("chartmuseum_system_group", "chartmuseum")
 
     print(storage)
 
